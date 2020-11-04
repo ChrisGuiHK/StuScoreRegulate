@@ -1,0 +1,640 @@
+/**************************
+** 文件名:学生成绩管理系统
+** 创建人:桂昊坤
+** 日 期:2020.11.4
+** 版 本:Version 3.0
+**------------------------
+*************************/
+#include <stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#define MAX_NUM 30
+#define MAX_INPUT 10
+#define MAX_CLASS 6
+
+#define LONG_DATA 0
+#define INT_DATA 1
+#define CHAR_DATA 2
+#define NEGATIVE_SEQUENCE 0
+#define POSITIVE_SEQUENCE 1
+
+int StuNum = 0;//学生数量
+int ClassNum = 0;//课程数量
+int StuSumScore[MAX_NUM] = { 0 };//学生成绩
+typedef int(*type)(void*, void*);
+
+void PrintMenu();
+void InputData(long StuId[], int StuScore[][MAX_CLASS], char StuName[][MAX_INPUT]);
+void PrintData(long StuId[], int StuScore[][MAX_CLASS], char StuName[][MAX_INPUT]);
+void PrintClassAverSum(int StuScore[][MAX_CLASS]);
+void PrintStuAverSum(int StuScore[][MAX_CLASS]);
+void PrintSortData(long StuId[], int StuScore[][MAX_CLASS], char StuName[][MAX_INPUT], int type, int order);
+void SearchStuData(long StuId[], int StuScore[][MAX_CLASS], char StuName[][MAX_INPUT], int type);
+void Statistic(int StuScore[][MAX_CLASS]);
+void BubbleSort(void* input, int* SubScript, type method, int size);
+int BinarySearch(void* input, void* element, int size, int Subscript[MAX_NUM], type Compare);
+int Compare_long(void* input_1, void* input_2);
+int Compare_int(void* input_1, void* input_2);
+int Compare_char(void* input_1, void* input_2);
+int getStuSum(int* StuScore);
+float getStuAver(int* StuScore);
+int getClassSum(int* StuScore);
+float getClassAver(int* StuScore);
+void swap(int* a, int* b);
+int IsEmpty();
+
+int main()
+{
+    int iChoice, iRet;
+    long StuId[MAX_NUM] = { 0 };
+    int StuScore[MAX_NUM][MAX_CLASS] = { 0 };
+    char StuName[MAX_NUM][MAX_INPUT] = { 0 };
+
+    printf("Number:200110701\nSubject No.7- Project No.1\n\n");//项目名称
+    do {
+        PrintMenu();
+        do {
+            iRet = scanf("%d", &iChoice);
+            if (iChoice < 0 || iChoice>11 || iRet != 1)
+            {
+                printf("Please enter your choice:");
+            }
+            while (getchar() != '\n');
+        } while (iRet != 1 || iChoice < 0 || iChoice>11);
+
+        switch (iChoice)
+        {
+        case 1:
+            InputData(StuId, StuScore, StuName);
+            break;
+        case 2:
+            PrintData(StuId, StuScore, StuName);
+            break;
+        case 3:
+            PrintClassAverSum(StuScore);
+            break;
+        case 4:
+            PrintStuAverSum(StuScore);
+            break;
+        case 5:
+            PrintSortData(StuId, StuScore, StuName, INT_DATA, NEGATIVE_SEQUENCE);
+            break;
+        case 6:
+            PrintSortData(StuId, StuScore, StuName, INT_DATA, POSITIVE_SEQUENCE);
+            break;
+        case 7:
+            PrintSortData(StuId, StuScore, StuName, LONG_DATA, POSITIVE_SEQUENCE);
+            break;
+        case 8:
+            PrintSortData(StuId, StuScore, StuName, CHAR_DATA, POSITIVE_SEQUENCE);
+            break;
+        case 9:
+            SearchStuData(StuId, StuScore, StuName, LONG_DATA);
+            break;
+        case 10:
+            SearchStuData(StuId, StuScore, StuName, CHAR_DATA);
+            break;
+        case 11:
+            Statistic(StuScore);
+            break;
+        }
+
+        system("pause");//停顿
+        system("cls");//清屏
+    } while (iChoice != 0);//循环条件
+
+    return 0;
+}
+/**********************************
+** 函数名:PrintMenu
+** 功能描述:打印菜单
+************************************/
+void PrintMenu()
+{
+    printf("1.Input record\n");
+    printf("2.List record\n");
+    printf("3.Calculate total and average score of every course\n");
+    printf("4.Calculate total and average score of every student\n");
+    printf("5.Sort in descending order by total score of every student\n");
+    printf("6.Sort in ascending order by total score of every student \n");
+    printf("7.Sort in ascending order by StudentID\n");
+    printf("8.Sort in dictionary order by name\n");
+    printf("9.Search by StudentID\n");
+    printf("10.Search by name\n");
+    printf("11.Statistic analysis for every course\n");
+    printf("0.Exit\n");
+    printf("Please enter your choice:");
+}
+/**********************************
+** 函数名:InputData
+** 输 入: StuId[],StuScore[][]、StuName[][]
+** StuId[]---学生学号数组
+** StuScore[]---学生成绩数组
+** StuName[][]---学生姓名
+** 功能描述:录入每个学生的学号、姓名和考试成绩
+** 全局变量:StuNum,ClassNum
+************************************/
+void InputData(long StuId[], int StuScore[][MAX_CLASS], char StuName[][MAX_INPUT])
+{
+    int iRet;
+
+    do {
+        printf("Input the number of students(<=30):");
+        iRet = scanf("%d", &StuNum);
+        while (getchar() != '\n');
+    } while (iRet != 1 || StuNum <= 0 || StuNum > MAX_NUM);//获取学生人数
+
+    do {
+        printf("Input the number of classes(<=6):");
+        iRet = scanf("%d", &ClassNum);
+        while (getchar() != '\n');
+    } while (iRet != 1 || ClassNum <= 0 || ClassNum > MAX_CLASS);//获取课程数量
+
+    for (int i = 0; i < StuNum; i++)
+    {
+        do {
+            printf("Input the No.%d student's ID ,name :", i + 1);
+            iRet = scanf("%ld %s", &StuId[i], StuName[i]);
+            while (getchar() != '\n');
+        } while (iRet != 2 || StuId[i] <= 0);//获取数据
+        for (int j = 0; j < ClassNum; j++)
+        {
+            do {
+                printf("Input the student's No.%d class score:", j + 1);
+                iRet = scanf("%d", &StuScore[i][j]);
+                while (getchar() != '\n');
+            } while (iRet != 1 || StuScore[i][j] < 0 || StuScore[i][j]>100);//获取数据
+        }
+    }
+}
+/**********************************
+** 函数名:PrintData
+** 输 入:StuId[],StuScore[][],StuName[][]
+** StuId[]---学生学号数组
+** StuScore[]---学生成绩数组
+** StuName[]---学生姓名
+** 功能描述:输出每个学生的学号、姓名、考试成绩（按输入的顺序输出）
+** 全局变量:StuNum,ClassNum
+** 调用模块:IsEmpty(),getStuSum(),getStuAver()
+************************************/
+void PrintData(long StuId[], int StuScore[][MAX_CLASS], char StuName[][MAX_INPUT])
+{
+    if (!IsEmpty())
+    {
+        for (int i = 0; i < StuNum; i++)
+        {
+            printf("The No.%d student's ID:%ld\nname: %s\n", i + 1, StuId[i], StuName[i]);
+
+            for (int j = 0; j < ClassNum; j++)
+            {
+                printf("course No.%d:%d\n", j + 1, StuScore[i][j]);
+            }
+            printf("Sum score:%d  Average score:%.2f\n\n", getStuSum(StuScore[i]), getStuAver(StuScore[i]));
+        }
+    }
+}
+/**********************************
+** 函数名:PrintClassAverSum
+** 输 入:StuScore[][]
+** StuScore[][]---学生成绩数组
+** 功能描述:计算并显示课程的总分和平均分
+** 全局变量:ClassNum
+** 调用模块:IsEmpty(),getClassSum(),getClassAver()
+************************************/
+void PrintClassAverSum(int StuScore[][MAX_CLASS])
+{
+    if (!IsEmpty())
+    {
+        for (int i = 0; i < ClassNum; i++)
+        {
+            printf("Class No.%d:\nThe sum score is %d,the average score is %.2f\n", i + 1, getClassSum(&StuScore[0][i]), getClassAver(&StuScore[0][i]));
+        }
+    }
+}
+/**********************************
+** 函数名:PrintStuAverSum
+** 输 入:StuScore[][]
+** StuScore[][]---学生成绩数组
+** 功能描述:计算并显示学生的总分和平均分
+** 全局变量:StuNum,StuSumScore[]
+** 调用模块:IsEmpty(),getStuSum(),getStuAver()
+************************************/
+void PrintStuAverSum(int StuScore[][MAX_CLASS])
+{
+    if (!IsEmpty())
+    {
+        for (int i = 0; i < StuNum; i++)
+        {
+            StuSumScore[i] = getStuSum(StuScore[i]);
+            printf("Student No.%d:\nThe sum score is %d,the average score is %.2f\n", i + 1, StuSumScore[i], getStuAver(StuScore[i]));
+        }
+    }
+}
+/**********************************
+** 函数名:PrintSortData
+** 输 入:StuId[],StuScore[][],char StuName[][MAX_INPUT],type,order
+** StuId[]---学生学号数组
+** StuScore[]---学生成绩数组
+** StuName[][MAX_INPUT]---学生姓名数组
+** type---排序数据类型（LONG_DATA：0   INT_DATA：1    CHAR_DATA:2）
+** order--排列顺序（NEGATIVE_SEQUENCE：0      POSITIVE_SEQUENCE：1）
+** 功能描述:按（正序/逆序）排列（学生成绩/学号/姓名），并打印数据
+** 全局变量:StuNum,ClassNum,StuSumScore[]
+** 调用模块:IsEmpty()，BubbleSort(),Compare_long(),Compare_int(),Compare_char()
+************************************/
+void PrintSortData(long StuId[], int StuScore[][MAX_CLASS], char StuName[][MAX_INPUT], int type, int order)
+{
+    if (!IsEmpty())
+    {
+        int SubScript[MAX_NUM];
+        int BytePerUnit;
+
+        for (int i = 0; i < StuNum; i++)
+        {
+            SubScript[i] = i;//初始化角标
+        }
+
+        if (type == 0)//选择排列类型
+        {
+            BytePerUnit = sizeof(long);
+            BubbleSort(StuId, SubScript, Compare_long, BytePerUnit);
+        }
+        else if (type == 1)
+        {
+            BytePerUnit = sizeof(int);
+            BubbleSort(StuSumScore, SubScript, Compare_int, BytePerUnit);
+        }
+        else
+        {
+            BytePerUnit = sizeof(char[MAX_INPUT]);
+            BubbleSort(StuName, SubScript, Compare_char, BytePerUnit);
+        }
+
+
+        if (order)//选择排列顺序
+        {
+            for (int i = 0; i < StuNum; i++)
+            {
+                printf("Student Id:%ld\nStudent name:%s\n", *(StuId + SubScript[i]), StuName[SubScript[i]]);
+                for (int j = 0; j < ClassNum; j++)
+                {
+                    printf("course No.%d:%d\n", j + 1, StuScore[SubScript[i]][j]);
+                }
+                printf("\n");
+            }
+        }
+        else
+        {
+            for (int i = StuNum - 1; i >= 0; i--)
+            {
+                printf("Student Id:%ld\nStudent name:%s\n", *(StuId + SubScript[i]), StuName[SubScript[i]]);
+                for (int j = 0; j < ClassNum; j++)
+                {
+                    printf("course No.%d:%d\n", j + 1, StuScore[SubScript[i]][j]);
+                }
+                printf("\n");
+            }
+        }
+    }
+}
+/**********************************
+** 函数名:SearchStuData
+** 输 入:StuId[],StuScore[][],char StuName[][MAX_INPUT],type
+** StuId[]---学生学号数组
+** StuScore[][]---学生成绩数组
+** StuName[][MAX_INPUT]---学生姓名数组
+** type---排序数据类型（LONG_DATA：0   INT_DATA：1    CHAR_DATA:2）
+** 功能描述:寻找指定类型（int,long,char*)数据，并打印学生相关数据。若数据无对应，报告错误
+** 全局变量:StuNum,ClassNum,StuSumScore[]
+** 调用模块:IsEmpty()，BubbleSort(),BinarySearch(),Compare_long(),Compare_int(),Compare_char()
+************************************/
+void SearchStuData(long StuId[], int StuScore[][MAX_CLASS], char StuName[][MAX_INPUT], int type)
+{
+    int iRet = 0, rank, temp;
+    int Subscript[MAX_NUM];
+    char SaveData[MAX_NUM] = { 0 };
+    long StuNumber;
+
+    if (!IsEmpty())
+    {
+        do {
+            if (type == 0)
+            {
+                printf("Input the student's ID:");
+                iRet = scanf(" %ld", &StuNumber);
+            }
+            else if (type == 2)
+            {
+                printf("Input the student's name:");
+                iRet = scanf(" %s", SaveData);
+            }
+            while (getchar() != '\n');
+        } while (iRet != 1);
+
+        for (int i = 0; i < StuNum; i++)
+        {
+            Subscript[i] = i;//初始化角标
+        }
+
+        if (type == 0)
+        {
+            BubbleSort(StuId, Subscript, Compare_long, sizeof(long));
+            iRet = BinarySearch(StuId, &StuNumber, sizeof(long), Subscript, Compare_long);
+        }
+        else if (type == 2)
+        {
+            BubbleSort(StuName, Subscript, Compare_char, sizeof(char[MAX_INPUT]));
+            iRet = BinarySearch(StuName, SaveData, sizeof(char[MAX_INPUT]), Subscript, Compare_char);
+        }
+
+        if (iRet >= 0)//监测数据是否在数组中
+        {
+            printf("The student's ID:%ld\nname:%s \n", StuId[Subscript[iRet]], StuName[Subscript[iRet]]);
+            temp = StuSumScore[Subscript[iRet]];
+
+            for (int j = 0; j < ClassNum; j++)
+            {
+                printf("course No.%d:%d\n", j + 1, StuScore[Subscript[iRet]][j]);
+            }
+            BubbleSort(StuSumScore, Subscript, Compare_int, sizeof(int));
+            rank = BinarySearch(StuSumScore, &temp, sizeof(int), Subscript, Compare_int);
+            printf("Student's rank:%d\n", StuNum - rank);
+        }
+        else
+        {
+            printf("Can't find the target student!\n");
+        }
+    }
+}
+/**********************************
+** 函数名:Statistic
+** 输 入:StuScore[][]
+** StuScore[][]---学生成绩数组
+** 功能描述:按优秀（90—100分）、良好（80—89分）、中等（70—79分）、及格（60一69分）、不及格
+(0—59分)5个类别，统计每个类别在每门课程的人数以及所占的百分比
+** 全局变量:StuNum,ClassNum
+** 调用模块:IsEmpty()
+************************************/
+void Statistic(int StuScore[][MAX_CLASS])
+{
+    if (!IsEmpty())
+    {
+        for (int j = 0; j < ClassNum; j++)
+        {
+            int excellent = 0, good = 0, medium = 0, pass = 0, fail = 0;//初始化数据
+
+            for (int i = 0; i < StuNum; i++)
+            {
+                if (StuScore[i][j] >= 90)
+                {
+                    excellent++;
+                }
+                else if (StuScore[i][j] >= 80)
+                {
+                    good++;
+                }
+                else if (StuScore[i][j] >= 70)
+                {
+                    medium++;
+                }
+                else if (StuScore[i][j] >= 60)
+                {
+                    pass++;
+                }
+                else
+                {
+                    fail++;
+                }
+            }
+            printf("class %d\n", j + 1);
+            printf("Excellent:%-5drate:%.2f\nGood:%-10drate:%.2f\nMedium:%-8drate:%.2f\nPass:%-10drate:%.2f\nFail:%-10drate:%.2f\n\n",
+                excellent, (float)excellent / StuNum, good, (float)good / StuNum, medium, (float)medium / StuNum,
+                pass, (float)pass / StuNum, fail, (float)fail / StuNum);
+        }
+    }
+}
+/**********************************
+** 函数名:BubbleSort
+** 输 入:*input,*Subscript,method,size
+** *input---指向排序数组首地址的指针
+** *Subscript---指向数组角标顺序的指针
+** method---函数指针调用方法（Compare_long，Compare_int,Compare_char）
+** size---排序类型字节数
+** 功能描述:对long,int,char*类型元素进行冒泡排序，不改变原数组，将数组角标按排序顺序重排
+** 全局变量:StuNum
+** 调用模块:Swap(),Compare_long(),Compare_int(),Compare_char()
+************************************/
+void BubbleSort(void* input, int* SubScript, type method, int size)
+{
+    for (int i = 0; i < StuNum; i++)
+    {
+        for (int j = StuNum - 1; j >= i + 1; j--)
+        {
+            if (method((char*)input + SubScript[j - 1] * size, (char*)input + SubScript[j] * size) > 0)
+            {
+                swap(&SubScript[j], &SubScript[j - 1]);
+            }
+        }
+    }
+}
+/**********************************
+** 函数名:BinarySearch
+** 输 入:*input,*element,,size,Subscript[],Compare
+** *input---指向搜索数组首地址的指针
+** *element---指向被搜索数据的指针
+** size---搜索数据字节数
+** *Subscript---指向数组角标顺序的指针
+** compare---函数指针调用方法（Compare_long，Compare_int,Compare_char）
+** 功能描述:利用二分查找，找到对应数据角标的角标，若无数据，返回-1
+** 全局变量:StuNum
+** 调用模块:Swap(),Compare_long(),Compare_int(),Compare_char()
+************************************/
+int BinarySearch(void* input, void* element, int size, int Subscript[MAX_NUM], type Compare)
+{
+    int iStart = 0,
+        iEnd = StuNum - 1,
+        iRet, iMid;
+
+    while (iStart <= iEnd)
+    {
+        iMid = (iStart + iEnd) / 2;
+
+        iRet = Compare((char*)input + Subscript[iMid] * size, element);
+        if (iRet == 0)
+        {
+            return iMid;
+        }
+        if (iRet < 0)
+        {
+            iStart = iMid + 1;
+        }
+        else
+        {
+            iEnd = iMid - 1;
+        }
+    }
+
+    return -1;
+}
+/**********************************
+** 函数名:Compare_long
+** 输 入: *input_1,*input_2
+** input_1---指向元素1的指针
+** input_2---指向元素2的指针
+** 输 出: x---
+** x 为 1, 元素1>元素2
+** x 为 0, 元素1=元素2
+** x 为-1, 元素1<元素2
+** 功能描述:比较long型数据
+************************************/
+int Compare_long(void* input_1, void* input_2)
+{
+    if (*(long*)input_1 > * (long*)input_2)
+        return 1;
+    else if (*(long*)input_1 == *(long*)input_2)
+        return 0;
+    else
+        return -1;
+}
+/**********************************
+** 函数名:Compare_int
+** 输 入: *input_1,*input_2
+** input_1---指向元素1的指针
+** input_2---指向元素2的指针
+** 输 出: x---
+** x 为 1, 元素1>元素2
+** x 为 0, 元素1=元素2
+** x 为-1, 元素1<元素2
+** 功能描述:比较int型数据
+************************************/
+int Compare_int(void* input_1, void* input_2)
+{
+    if (*(int*)input_1 > * (int*)input_2)
+        return 1;
+    else if (*(int*)input_1 == *(int*)input_2)
+        return 0;
+    else
+        return -1;
+}
+/**********************************
+** 函数名:Compare_char
+** 输 入: *input_1,*input_2
+** input_1---指向元素1的指针
+** input_2---指向元素2的指针
+** 输 出: x---
+** x 为 1, 元素1>元素2
+** x 为 0, 元素1=元素2
+** x 为-1, 元素1<元素2
+** 功能描述:比较char*型数据
+************************************/
+int Compare_char(void* input_1, void* input_2)
+{
+    return stricmp((char*)input_1, (char*)input_2);
+}
+/**********************************
+** 函数名:IsEmpty
+** 输 出: x---
+** x 为 1, 表示数组中有元素
+** x 为 0, 表示数组中无元素
+** 功能描述:检测数组中是否有元素
+** 全局变量:StuNum,ClassNum
+************************************/
+/**********************************
+** 函数名:getStuNum
+** 输 入: *StuScore
+** *StuScore---学生成绩数组
+** 输 出：sum
+** sum---单个学生总分
+** 功能描述:获取单个学生总分
+** 全局变量：ClassNum
+************************************/
+int getStuSum(int* StuScore)
+{
+    int sum = 0;
+
+    for (int i = 0; i < ClassNum; i++)
+    {
+        sum += StuScore[i];
+    }
+    return sum;
+}
+/**********************************
+** 函数名:getStuAver
+** 输 入: *StuScore
+** *StuScore---学生成绩数组
+** 输 出：(float)sum/ClassNum
+** (float)sum/ClassNum---单个学生单科平均分
+** 功能描述:获取单个学生单科平均分
+** 全局变量：ClassNum
+************************************/
+float getStuAver(int* StuScore)
+{
+    int sum = 0;
+
+    for (int i = 0; i < ClassNum; i++)
+    {
+        sum += StuScore[i];
+    }
+    return (float)sum / ClassNum;
+}
+/**********************************
+** 函数名:getClassNum
+** 输 入: *StuScore
+** *StuScore---学生成绩数组
+** 输 出：sum
+** sum---单科所有学生总分
+** 功能描述:获取单科所有学生总分
+** 全局变量：StuNum
+************************************/
+int getClassSum(int* StuScore)
+{
+    int sum = 0;
+
+    for (int i = 0; i < StuNum; i++)
+    {
+        sum += StuScore[i * MAX_CLASS];
+    }
+    return sum;
+}
+/**********************************
+** 函数名:getClassAver
+** 输 入: *StuScore
+** *StuScore---学生成绩数组
+** 输 出：(float)sum/StuNum
+** (float)sum/StuNum---单科所有学生平均分
+** 功能描述:获取单科所有学生平均分
+** 全局变量：StuNum
+************************************/
+float getClassAver(int* StuScore)
+{
+    int sum = 0;
+
+    for (int i = 0; i < StuNum; i++)
+    {
+        sum += StuScore[i * MAX_CLASS];
+    }
+    return (float)sum / StuNum;
+}
+int IsEmpty()
+{
+    if (StuNum == 0||ClassNum==0)
+    {
+        printf("There is no data inside.Please input the data first.\n");
+        return 1;
+    }
+    return 0;
+}
+/**********************************
+** 函数名:swap
+** 输 入: *a,*b
+** *a---指向元素a的指针
+** *b---指向元素b的指针
+** 功能描述:交换*a,*b指针指向的数据
+************************************/
+void swap(int* a, int* b)
+{
+    int temp;
+    temp = *a;
+    *a = *b;
+    *b = temp;
+}
